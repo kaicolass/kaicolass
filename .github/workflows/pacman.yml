@@ -1,1 +1,38 @@
+name: Generate Pac-Man contributions
 
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"     
+  push:
+    branches: [ main ]      
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Pac-Man SVGs
+        uses: abozanona/pacman-contribution-graph@main
+        with:
+          github_user_name: ${{ github.repository_owner }}
+
+      - name: Prepare dist
+        run: |
+          mkdir -p dist
+          # copia SVGs gerados (nome pode variar conforme action/fork)
+          if [ -f pacman-contribution-graph.svg ]; then cp pacman-contribution-graph.svg dist/; fi
+          if [ -f pacman-contribution-graph-dark.svg ]; then cp pacman-contribution-graph-dark.svg dist/; fi
+          if [ -d output ]; then cp -f output/*.svg dist/ || true; fi
+          ls -la dist
+
+      - name: Publish to output branch
+        uses: crazy-max/ghaction-github-pages@v3.1.0
+        with:
+          target_branch: output
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
